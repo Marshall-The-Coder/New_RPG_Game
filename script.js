@@ -7,19 +7,12 @@ let playerxmovement = 0;
 let playerymovement = 0;
 
 const keys = {};
-let sprinting = false;
 
 window.addEventListener('keydown', (e) => {
     keys[e.key] = true;
-    if (e.key === 'Shift') {
-        sprinting = true;
-    }
 });
 window.addEventListener('keyup', (e) => {
     keys[e.key] = false;
-    if (e.key === 'Shift') {
-        sprinting = false;
-    }
 });
 
 class Player {
@@ -50,7 +43,7 @@ class Player {
     }
 }
 
-class object {
+class Block {
     constructor(x, y, width, height) {
         this.x = x;
         this.y = y;
@@ -97,8 +90,8 @@ class Camera {
     }
 
     follow(player) {
-        this.x = player.x - canvas.width / 2;
-        this.y = player.y - canvas.height / 2;
+        this.x = (player.x + player.width / 2) - canvas.width / 2;
+        this.y = (player.y + player.height / 2) - canvas.height / 2;
     }
 }
 
@@ -157,7 +150,7 @@ class Inventory {
 
 const player = new Player(canvas.width / 2, canvas.height / 2, 50, 50);
 const camera = new Camera();
-const block = new object(300, 300, 100, 100);
+const block = new Block(300, 300, 100, 100);
 const world = new World();
 const inventory = new Inventory(5);
 
@@ -172,7 +165,6 @@ function gameLoop() {
     world.draw(ctx, camera);
     player.draw(ctx, camera);
     block.draw(ctx, camera);
-    inventory.render();
     requestAnimationFrame(gameLoop);
 }
 
