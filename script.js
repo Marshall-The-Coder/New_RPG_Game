@@ -116,6 +116,21 @@ class World {
     }
 }
 
+class Cords {
+    constructor() {
+        this.cordsDiv = document.getElementById('cords');
+        this.x = window.innerWidth - 150;
+        this.y = 20;
+    }
+
+    update(ctx, camera, target) {
+        this.x = camera.x + canvas.width / 2 - 150;
+        this.y = camera.y + 20;
+        this.cordsDiv.textContent = `X: ${Math.floor(Math.floor(((target.x + target.width) - canvas.width / 2) / 50))},
+        Y: ${Math.floor(Math.floor((-((target.y + target.height) - canvas.height / 2)) / 50))}`;
+    }
+}
+
 class Inventory {
     constructor(size) {
         this.size = size;
@@ -153,6 +168,7 @@ const camera = new Camera();
 const block = new Block(300, 300, 100, 100);
 const world = new World();
 const inventory = new Inventory(5);
+const cords = new Cords();
 
 inventory.addItem('Sword');
 inventory.addItem('Shield');
@@ -165,6 +181,8 @@ function gameLoop() {
     world.draw(ctx, camera);
     player.draw(ctx, camera);
     block.draw(ctx, camera);
+    cords.update(ctx, camera, player);
+
     requestAnimationFrame(gameLoop);
 }
 
