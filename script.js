@@ -22,15 +22,74 @@ class Player {
         this.height = height;
         this.width = width;
     }
-    move(dx, dy) {
+    update() {
+
+        let dx = 0;
+        let dy = 0;
+
+        if (keys['w']) {
+            dy -= this.speed;
+        }
+        if (keys['s']) {
+            dy += this.speed;
+        }
+        if (keys['a']) {
+            dx -= this.speed;
+        }
+        if (keys['d']) {
+            dx += this.speed;
+        }
         this.x += dx;
         this.y += dy;
     }
-    draw(ctx) {
+    draw(ctx, camera) {
         ctx.fillStyle = 'blue';
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
     }
 }
+
+class Camera {
+    constructor() {
+        this.x = 0;
+        this.y = 0;
+    }
+
+    flow(player) {
+        this.x = player.x - canvas.width / 2;
+        this.y = player.y - canvas.height / 2;
+    }
+}
+
+class World {
+    constructor() {
+        this.tileSize = 64;
+    }
+
+    draw(ctx, camera) {
+
+        const renderDistance = 20;
+
+        const startX = Math.floor(camera.x / this.tileSize);
+        const startY = Math.floor(camera.y / this.tileSize);
+
+        for (let y = startY; y < startY + renderDistance; y++) {
+            for (let x = startX; x < startX + renderDistance; x++) {
+                const screenX = x * this.tileSize - camera.x;
+                const screenY = y * this.tileSize - camera.y;
+
+                ctx.fillstyle =
+                    (x + y) % 2 === 0 
+                        ? '#1f4e03' 
+                        : '#36913f';
+                
+                ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
+            }
+        }
+    }
+}
+const world = new World();
+
+const camera = new Camera();
 
 const player = new Player(
     canvas.width / 2, 
@@ -38,36 +97,11 @@ const player = new Player(
     50, 
     50);
 
-function handleKeyboardInput() {
-    if (keys['w'] || keys['ArrowUp']) {
-        playerymovement = 5;
-    } 
-    if (keys['s'] || keys['ArrowDown']) {
-        playerymovement = -5;
-    } 
-    if (keys['a'] || keys['ArrowLeft']) {
-        playerxmovement = -5;
-    } 
-    if (keys['d'] || keys['ArrowRight']) {
-        playerxmovement = 5;
-    }
-    if (!keys['w'] && !keys['ArrowUp'] && !keys['s'] && !keys['ArrowDown']) {
-        playerymovement = 0;
-    }
-    if (!keys['a'] && !keys['ArrowLeft'] && !keys['d'] && !keys['ArrowRight']) {
-        playerxmovement = 0;
-    }
-}
-
-function PlayerMovement() {
-    player.move(playerxmovement, -playerymovement);
-}
 
 function gameLoop() {
-
-    handleKeyboardInput();
-    PlayerMovement();
-
+    player.update();
+    camera.flow(player);
+    world.draw(ctx, camera);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     player.draw(ctx);
     requestAnimationFrame(gameLoop);
