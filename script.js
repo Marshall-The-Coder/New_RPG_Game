@@ -7,12 +7,19 @@ let playerxmovement = 0;
 let playerymovement = 0;
 
 const keys = {};
+let sprinting = false;
 
 window.addEventListener('keydown', (e) => {
     keys[e.key] = true;
+    if (e.key === 'Shift') {
+        sprinting = true;
+    }
 });
 window.addEventListener('keyup', (e) => {
     keys[e.key] = false;
+    if (e.key === 'Shift') {
+        sprinting = false;
+    }
 });
 
 class Player {
@@ -116,11 +123,46 @@ class World {
     }
 }
 
+class Inventory {
+    constructor(size) {
+        this.size = size;
+
+        this.slots = new Array(size).fill(null);
+
+        this.inventoryDiv = document.getElementById('inventory');
+    }
+
+    addItem(item) {
+        for (let i = 0; i < this.slots.length; i++) {
+            if (this.slots[i] === null) {
+                this.slots[i] = item;
+                this.render();
+                return true;
+            }
+        }
+        return false;
+    }
+    render() {
+        this.inventoryDiv.innerHTML = '';
+        for (let item of this.slots) {
+            const slotDiv = document.createElement('div');
+            slotDiv.classList.add('slot');
+            if (item) {
+                slotDiv.textContent = item;
+            }
+            this.inventoryDiv.appendChild(slotDiv);
+        }
+    }
+}
 
 const player = new Player(canvas.width / 2, canvas.height / 2, 50, 50);
 const camera = new Camera();
 const block = new object(300, 300, 100, 100);
 const world = new World();
+const inventory = new Inventory(5);
+
+inventory.addItem('Sword');
+inventory.addItem('Shield');
 
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -130,6 +172,7 @@ function gameLoop() {
     world.draw(ctx, camera);
     player.draw(ctx, camera);
     block.draw(ctx, camera);
+    inventory.render();
     requestAnimationFrame(gameLoop);
 }
 
