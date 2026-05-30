@@ -83,6 +83,32 @@ class Block {
     }
 }
 
+class Item {
+    constructor(x, y, width, height, name) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.name = name;
+        this.pickedUp = false;
+    }
+
+    draw(ctx, camera) {
+        if (!this.pickedUp) {
+            ctx.fillStyle = 'yellow';
+            ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
+        }
+    }
+
+    collidesWith(target) {
+        if (target.x + target.width > this.x - 25 && target.x - 25 < this.x + this.width &&
+            target.y + target.height > this.y - 25 && target.y - 25 < this.y + this.height && !this.pickedUp && keys['e']) {
+            inventory.addItem(this.name);
+            this.pickedUp = true;
+        }
+    }
+}
+
 class Camera {
     constructor() {
         this.x = 0;
@@ -168,17 +194,18 @@ const camera = new Camera();
 const block = new Block(300, 300, 100, 100);
 const world = new World();
 const inventory = new Inventory(5);
+inventory.render();
 const cords = new Cords();
-
-inventory.addItem('Sword');
-inventory.addItem('Shield');
+const newItem = new Item(462.5, 162.5, 25, 25, 'Gold');
 
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     player.update();
     block.collidesWith(player);
+    newItem.collidesWith(player);
     camera.follow(player);
     world.draw(ctx, camera);
+    newItem.draw(ctx, camera);
     player.draw(ctx, camera);
     block.draw(ctx, camera);
     cords.update(ctx, camera, player);
