@@ -154,7 +154,7 @@ class Inventory {
     }
     render() {
         this.inventoryDiv.innerHTML = '';
-        for (let item of this.slots) {
+        this.slots.forEach((item, index) => {
             const slotDiv =
                 document.createElement('div');
             slotDiv.classList.add('slot');
@@ -162,7 +162,59 @@ class Inventory {
                 slotDiv.textContent =
                     `${item.amount} ${item.name}`;
             }
+            slotDiv.addEventListener('click', () => {
+                if (!game.chestOpen) return;
+                if (this === game.inventory) {
+                    this.moveItemTo(
+                        index,
+                        game.chestInventory
+                    );
+                }
+                else if (
+                    this === game.chestInventory
+                ) {
+    
+                    this.moveItemTo(
+                        index,
+                        game.inventory
+                    );
+    
+                }
+    
+            });
             this.inventoryDiv.appendChild(slotDiv);
+        });
+    }
+    moveItemTo(index, otherInventory) {
+        const item = this.slots[index];
+        if (!item) return;
+        for (let slot of otherInventory.slots) {
+            if (
+                slot &&
+                slot.name === item.name &&
+                slot.amount < 5
+            ) {
+                slot.amount += item.amount;
+                if (slot.amount > 5) {
+                    item.amount = slot.amount - 5;
+                    slot.amount = 5;
+                } else {
+                    this.slots[index] = null;
+                }
+                this.render();
+                otherInventory.render();
+                return;
+            }
+        }
+        for (let i = 0; i < otherInventory.slots.length; i++) {
+            if (otherInventory.slots[i] === null) {
+                otherInventory.slots[i] = item;
+                this.slots[index] = null;
+
+                this.render();
+                otherInventory.render();
+                return;
+            }
         }
     }
     setVisible(isVisible) {
@@ -364,6 +416,10 @@ class GameData {
                 10
             );
         this.chestInventory.setVisible(false);
+        this.chestInventory.addItem('Sword');
+        this.chestInventory.addItem('Block');
+        this.chestInventory.addItem('Stone');
+        this.chestInventory.addItem('Silver')
         this.chest =
             new Chest(300, 300, 100, 50);
         this.exitChest =
