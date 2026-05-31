@@ -65,7 +65,7 @@ class Player {
     }
 }
 
-class Block {
+class Chest {
     constructor(x, y, width, height) {
         this.x = x;
         this.y = y;
@@ -101,6 +101,36 @@ class Block {
             if (minoverlap === overlapbottom) {
                 target.y = this.y + this.height;
             }
+        }
+    }
+    clicked() {
+        const worldMouseX = mouse.x + camera.x;
+        const worldMouseY = mouse.y + camera.y;
+
+        if (
+            worldMouseX > this.x &&
+            worldMouseX < this.x + this.width &&
+            worldMouseY > this.y &&
+            worldMouseY < this.y + this.height &&
+            !ChestOpen &&
+            mouse.clicked
+        ) {
+            ChestOpen = true;
+            if (ChestOpen && !this.openedOnce) {
+                chestInventory.setVisible(true);
+                chestInventory.render();
+                this.openedOnce = true;
+            }
+        }
+    }
+
+    Open() {
+        if (ChestOpen && !this.openedOnce) {
+            chestInventory.render();
+            this.openedOnce = true;
+        }
+        if (!ChestOpen) {
+            this.openedOnce = false;
         }
     }
 }
@@ -143,7 +173,6 @@ class Item {
             !this.pickedUp &&
             mouse.clicked
         ) {
-
             if (inventory.addItem(this.name)) {
                 this.pickedUp = true;
             }
@@ -205,10 +234,15 @@ class Cords {
 
 class Inventory {
 
-    constructor(size) {
+    constructor(size, x, y, name, slot_per_row) {
         this.size = size;
         this.slots = new Array(size).fill(null);
-        this.inventoryDiv = document.getElementById('inventory');
+        this.name = name;
+        this.inventoryDiv = document.getElementById(this.name);
+        this.inventoryDiv.style.position = 'fixed';
+        this.inventoryDiv.style.left = `${x}px`;
+        this.inventoryDiv.style.top = `${y}px`;
+        this.inventoryDiv.style.gridTemplateColumns = `repeat(${slot_per_row}, 50px)`
     }
 
     addItem(itemName) {
@@ -262,17 +296,60 @@ class Inventory {
             this.inventoryDiv.appendChild(slotDiv);
         }
     }
+    setVisible(isVisible) {
+        this.inventoryDiv.style.display = isVisible ? 'grid' : 'none';
+    }
+}
+
+class ExitChest {
+    constructor(x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    draw() {
+        if (ChestOpen) {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+    }
+
+    clicked(target) {
+        const worldMouseX = mouse.x;
+        const worldMouseY = mouse.y;
+
+        if (
+            worldMouseX > this.x &&
+            worldMouseX < this.x + this.width &&
+            worldMouseY > this.y &&
+            worldMouseY < this.y + this.height &&
+            ChestOpen &&
+            mouse.clicked
+        ) {
+            ChestOpen = false;
+            if (!ChestOpen) {
+                chestInventory.setVisible(false);
+                target.openedOnce = false;
+            }
+            chestInventory.render()
+        }
+    }
 }
 
 const player = new Player(500, 500, 50, 50);
+let ChestOpen = false;
 const camera = new Camera();
-const block = new Block(300, 300, 100, 100);
+const block = new Chest(300, 300, 100, 50);
 const world = new World();
-const inventory = new Inventory(5);
+const inventory = new Inventory(5, 20, window.innerHeight - 70, 'inventory', 5);
 inventory.render();
 const cords = new Cords();
 const gold = [];
 const wood = new Item(412.5, 412.5, 25, 25, 'Wood', 'saddleBrown');
+const chestInventory = new Inventory(30, window.innerWidth / 2 - (10 * 54 / 2) - 4, window.innerHeight / 2 - (3 * 52), 'chestInventory', 10);
+const LeaveChest = new ExitChest(window.innerWidth / 2 + (10 * 54 / 2) + 15, window.innerHeight / 2 - 2 * (3 * 52) + 120, 20, 20);
 
 for (let i = 0; i < 6; i++) {
     let maxFactor = 6;
@@ -285,6 +362,7 @@ function gameLoop() {
     block.collidesWith(player);
     gold.forEach(item => item.clicked());
     wood.clicked();
+    block.clicked();
     camera.follow(player);
     world.draw(ctx, camera);
     gold.forEach(item => item.draw(ctx, camera));
@@ -292,9 +370,11 @@ function gameLoop() {
     player.draw(ctx, camera);
     block.draw(ctx, camera);
     cords.update(ctx, camera, player);
-
+    LeaveChest.clicked(block);
+    block.Open();
+    LeaveChest.draw();
+    mouse.clicked = false;
     requestAnimationFrame(gameLoop);
 }
 
 gameLoop();
-mouse.clicked = false;

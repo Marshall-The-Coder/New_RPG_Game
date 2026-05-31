@@ -10,10 +10,12 @@ canvas {
 .inventory {
     display: grid;
     grid-template-columns: repeat(5, 50px);
-    gap: 5px;
+    column-gap: 5px;
+    row-gap: 5px;
     position: fixed;
-    bottom: 20px;
-    left: 20px;
+    bottom: 5px;
+    left: 5px;
+    grid-auto-rows: 50px;
 }
 .slot {
     width: 50px;
