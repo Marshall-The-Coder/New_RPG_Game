@@ -7,6 +7,26 @@ let playerxmovement = 0;
 let playerymovement = 0;
 
 const keys = {};
+const mouse = {
+    x: 0,
+    y: 0,
+    clicked: false
+};
+
+window.addEventListener('mousemove', (e) => {
+
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+
+});
+
+window.addEventListener('mousedown', () => {
+    mouse.clicked = true;
+});
+
+window.addEventListener('mouseup', () => {
+    mouse.clicked = false;
+});
 
 window.addEventListener('keydown', (e) => {
     keys[e.key] = true;
@@ -96,15 +116,33 @@ class Item {
     draw(ctx, camera) {
         if (!this.pickedUp) {
             ctx.fillStyle = 'yellow';
-            ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
+
+            ctx.fillRect(
+                this.x - camera.x,
+                this.y - camera.y,
+                this.width,
+                this.height
+            );
         }
     }
 
-    collidesWith(target) {
-        if (target.x + target.width > this.x - 25 && target.x - 25 < this.x + this.width &&
-            target.y + target.height > this.y - 25 && target.y - 25 < this.y + this.height && !this.pickedUp && keys['e']) {
-            inventory.addItem(this.name);
-            this.pickedUp = true;
+    clicked() {
+
+        const worldMouseX = mouse.x + camera.x;
+        const worldMouseY = mouse.y + camera.y;
+
+        if (
+            worldMouseX > this.x &&
+            worldMouseX < this.x + this.width &&
+            worldMouseY > this.y &&
+            worldMouseY < this.y + this.height &&
+            !this.pickedUp &&
+            mouse.clicked
+        ) {
+
+            if (inventory.addItem(this.name)) {
+                this.pickedUp = true;
+            }
         }
     }
 }
@@ -158,7 +196,9 @@ class Cords {
 }
 
 class Inventory {
+
     constructor(size) {
+
         this.size = size;
 
         this.slots = new Array(size).fill(null);
@@ -166,24 +206,66 @@ class Inventory {
         this.inventoryDiv = document.getElementById('inventory');
     }
 
-    addItem(item) {
+    addItem(itemName) {
+
+        // First try stacking onto existing items
+
         for (let i = 0; i < this.slots.length; i++) {
-            if (this.slots[i] === null) {
-                this.slots[i] = item;
+
+            let slot = this.slots[i];
+
+            if (
+                slot &&
+                slot.name === itemName &&
+                slot.amount < 5
+            ) {
+
+                slot.amount++;
+
                 this.render();
+
                 return true;
             }
         }
+
+        // Then try empty slot
+
+        for (let i = 0; i < this.slots.length; i++) {
+
+            if (this.slots[i] === null) {
+
+                this.slots[i] = {
+                    name: itemName,
+                    amount: 1
+                };
+
+                this.render();
+
+                return true;
+            }
+        }
+
+        // Inventory full
+
         return false;
     }
+
     render() {
+
         this.inventoryDiv.innerHTML = '';
+
         for (let item of this.slots) {
+
             const slotDiv = document.createElement('div');
+
             slotDiv.classList.add('slot');
+
             if (item) {
-                slotDiv.textContent = item;
+
+                slotDiv.textContent =
+                    `${item.amount} ${item.name}`;
             }
+
             this.inventoryDiv.appendChild(slotDiv);
         }
     }
@@ -196,16 +278,21 @@ const world = new World();
 const inventory = new Inventory(5);
 inventory.render();
 const cords = new Cords();
-const newItem = new Item(462.5, 162.5, 25, 25, 'Gold');
+const gold = [];
+
+for (let i = 0; i < 6; i++) {
+    let maxFactor = 6;
+    gold.push(new Item(462.5 + (Math.round((Math.random() * maxFactor)) - maxFactor / 2) * 50, 162.5 + (Math.round((Math.random() * maxFactor)) - maxFactor / 2) * 50, 25, 25, 'Gold'));
+}
 
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     player.update();
     block.collidesWith(player);
-    newItem.collidesWith(player);
+    gold.forEach(item => item.clicked());
     camera.follow(player);
     world.draw(ctx, camera);
-    newItem.draw(ctx, camera);
+    gold.forEach(item => item.draw(ctx, camera));
     player.draw(ctx, camera);
     block.draw(ctx, camera);
     cords.update(ctx, camera, player);
@@ -214,3 +301,4 @@ function gameLoop() {
 }
 
 gameLoop();
+mouse.clicked = false;
