@@ -175,8 +175,6 @@ class Inventory {
 
     addItem(itemName) {
 
-        // Stack items first
-
         for (let slot of this.slots) {
 
             if (
@@ -192,8 +190,6 @@ class Inventory {
                 return true;
             }
         }
-
-        // Empty slot second
 
         for (let i = 0; i < this.slots.length; i++) {
 
@@ -249,8 +245,7 @@ class Item {
         width,
         height,
         name,
-        color
-    ) {
+        color) {
 
         this.x = x;
         this.y = y;
