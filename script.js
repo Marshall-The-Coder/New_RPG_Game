@@ -4,10 +4,8 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let playerxmovement = 0;
-let playerymovement = 0;
-
 const keys = {};
+
 const mouse = {
     x: 0,
     y: 0,
@@ -17,7 +15,6 @@ const mouse = {
 window.addEventListener('mousemove', (e) => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
-
 });
 
 window.addEventListener('mousedown', () => {
@@ -47,150 +44,48 @@ class Player {
     }
 
     update() {
+
         let dx = 0;
         let dy = 0;
 
-        if (keys['w']) dy = -this.speed;
-        if (keys['s']) dy = this.speed;
-        if (keys['a']) dx = -this.speed;
-        if (keys['d']) dx = this.speed;
+        if (keys['w']) dy -= this.speed;
+        if (keys['s']) dy += this.speed;
+        if (keys['a']) dx -= this.speed;
+        if (keys['d']) dx += this.speed;
 
         this.x += dx;
         this.y += dy;
     }
 
     draw(ctx, camera) {
+
         ctx.fillStyle = '#00008B';
-        ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
-    }
-}
 
-class Chest {
-    constructor(x, y, width, height) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-    }
-
-    draw(ctx, camera) {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
-    }
-
-    collidesWith(target) {
-        if (target.x + target.width > this.x && target.x < this.x + this.width &&
-            target.y + target.height > this.y && target.y < this.y + this.height) {
-            
-            let overlapleft = (target.x + target.width) - this.x;
-            let overlapright = (this.x + this.width) - target.x;
-            let overlaptop = (target.y + target.height) - this.y;
-            let overlapbottom = (this.y + this.height) - target.y;
-
-            let minoverlap = Math.min(overlapleft, overlapright, overlaptop, overlapbottom);
-            
-            if (minoverlap === overlapleft) {
-                target.x = this.x - target.width;
-            }
-            if (minoverlap === overlapright) {
-                target.x = this.x + this.width;
-            }
-            if (minoverlap === overlaptop) {
-                target.y = this.y - target.height;
-            }
-            if (minoverlap === overlapbottom) {
-                target.y = this.y + this.height;
-            }
-        }
-    }
-    clicked() {
-        const worldMouseX = mouse.x + camera.x;
-        const worldMouseY = mouse.y + camera.y;
-
-        if (
-            worldMouseX > this.x &&
-            worldMouseX < this.x + this.width &&
-            worldMouseY > this.y &&
-            worldMouseY < this.y + this.height &&
-            !ChestOpen &&
-            mouse.clicked
-        ) {
-            ChestOpen = true;
-            if (ChestOpen && !this.openedOnce) {
-                chestInventory.setVisible(true);
-                chestInventory.render();
-                this.openedOnce = true;
-            }
-        }
-    }
-
-    Open() {
-        if (ChestOpen && !this.openedOnce) {
-            chestInventory.render();
-            this.openedOnce = true;
-        }
-        if (!ChestOpen) {
-            this.openedOnce = false;
-        }
-    }
-}
-
-class Item {
-
-    constructor(x, y, width, height, name, color) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.name = name;
-        this.pickedUp = false;
-        this.color = color;
-    }
-
-    draw(ctx, camera) {
-        if (!this.pickedUp) {
-            ctx.fillStyle = this.color;
-
-            ctx.fillRect(
-                this.x - camera.x,
-                this.y - camera.y,
-                this.width,
-                this.height
-            );
-        }
-    }
-
-    clicked() {
-
-        const worldMouseX = mouse.x + camera.x;
-        const worldMouseY = mouse.y + camera.y;
-
-        if (
-            worldMouseX > this.x &&
-            worldMouseX < this.x + this.width &&
-            worldMouseY > this.y &&
-            worldMouseY < this.y + this.height &&
-            !this.pickedUp &&
-            mouse.clicked
-        ) {
-            if (inventory.addItem(this.name)) {
-                this.pickedUp = true;
-            }
-        }
+        ctx.fillRect(
+            this.x - camera.x,
+            this.y - camera.y,
+            this.width,
+            this.height
+        );
     }
 }
 
 class Camera {
 
     constructor() {
-
         this.x = 0;
         this.y = 0;
     }
 
-    follow(player) {
-        this.x = (player.x + player.width / 2) - canvas.width / 2;
-        this.y = (player.y + player.height / 2) - canvas.height / 2;
+    follow(target) {
+
+        this.x =
+            (target.x + target.width / 2) -
+            canvas.width / 2;
+
+        this.y =
+            (target.y + target.height / 2) -
+            canvas.height / 2;
     }
 }
 
@@ -201,55 +96,88 @@ class World {
     }
 
     draw(ctx, camera) {
+
         const renderDistance = 20;
-        const startX = Math.floor(camera.x / this.tileSize) - renderDistance;
-        const starty = Math.floor(camera.y / this.tileSize) - renderDistance;
-        
-        for (let x = startX; x < startX + renderDistance * 4; x++) {
-            for (let y = starty; y < starty + renderDistance * 2; y++) {
-                const screenX = x * this.tileSize - camera.x;
-                const screenY = y * this.tileSize - camera.y;
-                ctx.fillStyle = (x + y) % 2 === 0 ? '#1f4e03' : '#2b6906';
-                ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
+
+        const startX =
+            Math.floor(camera.x / this.tileSize) -
+            renderDistance;
+
+        const startY =
+            Math.floor(camera.y / this.tileSize) -
+            renderDistance;
+
+        for (
+            let x = startX;
+            x < startX + renderDistance * 4;
+            x++
+        ) {
+
+            for (
+                let y = startY;
+                y < startY + renderDistance * 2;
+                y++
+            ) {
+
+                const screenX =
+                    x * this.tileSize - camera.x;
+
+                const screenY =
+                    y * this.tileSize - camera.y;
+
+                ctx.fillStyle =
+                    (x + y) % 2 === 0
+                        ? '#1f4e03'
+                        : '#2b6906';
+
+                ctx.fillRect(
+                    screenX,
+                    screenY,
+                    this.tileSize,
+                    this.tileSize
+                );
             }
         }
     }
 }
 
-class Cords {
-
-    constructor() {
-        this.cordsDiv = document.getElementById('cords');
-        this.x = window.innerWidth - 150;
-        this.y = 20;
-    }
-
-    update(ctx, camera, target) {
-        this.x = camera.x + canvas.width / 2 - 150;
-        this.y = camera.y + 20;
-        this.cordsDiv.textContent = `X: ${Math.floor(Math.floor(((target.x + target.width / 2) - 500) / 50))},
-        Y: ${Math.floor(Math.floor((-((target.y + target.height / 2) - 500)) / 50)) + 1}`;
-    }
-}
-
 class Inventory {
 
-    constructor(size, x, y, name, slot_per_row) {
+    constructor(
+        size,
+        x,
+        y,
+        elementId,
+        slotsPerRow
+    ) {
+
         this.size = size;
-        this.slots = new Array(size).fill(null);
-        this.name = name;
-        this.inventoryDiv = document.getElementById(this.name);
+
+        this.slots =
+            new Array(size).fill(null);
+
+        this.inventoryDiv =
+            document.getElementById(elementId);
+
         this.inventoryDiv.style.position = 'fixed';
-        this.inventoryDiv.style.left = `${x}px`;
-        this.inventoryDiv.style.top = `${y}px`;
-        this.inventoryDiv.style.gridTemplateColumns = `repeat(${slot_per_row}, 50px)`
+
+        this.inventoryDiv.style.left =
+            `${x}px`;
+
+        this.inventoryDiv.style.top =
+            `${y}px`;
+
+        this.inventoryDiv.style.display = 'grid';
+
+        this.inventoryDiv.style.gridTemplateColumns =
+            `repeat(${slotsPerRow}, 50px)`;
     }
 
     addItem(itemName) {
 
-        for (let i = 0; i < this.slots.length; i++) {
+        // Stack items first
 
-            let slot = this.slots[i];
+        for (let slot of this.slots) {
 
             if (
                 slot &&
@@ -265,7 +193,10 @@ class Inventory {
             }
         }
 
+        // Empty slot second
+
         for (let i = 0; i < this.slots.length; i++) {
+
             if (this.slots[i] === null) {
 
                 this.slots[i] = {
@@ -278,31 +209,203 @@ class Inventory {
                 return true;
             }
         }
+
         return false;
     }
 
     render() {
+
         this.inventoryDiv.innerHTML = '';
 
         for (let item of this.slots) {
 
-            const slotDiv = document.createElement('div');
+            const slotDiv =
+                document.createElement('div');
+
             slotDiv.classList.add('slot');
 
             if (item) {
+
                 slotDiv.textContent =
                     `${item.amount} ${item.name}`;
             }
+
             this.inventoryDiv.appendChild(slotDiv);
         }
     }
+
     setVisible(isVisible) {
-        this.inventoryDiv.style.display = isVisible ? 'grid' : 'none';
+
+        this.inventoryDiv.style.display =
+            isVisible ? 'grid' : 'none';
+    }
+}
+
+class Item {
+
+    constructor(
+        x,
+        y,
+        width,
+        height,
+        name,
+        color
+    ) {
+
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+
+        this.name = name;
+        this.color = color;
+
+        this.pickedUp = false;
+    }
+
+    draw(ctx, camera) {
+
+        if (this.pickedUp) return;
+
+        ctx.fillStyle = this.color;
+
+        ctx.fillRect(
+            this.x - camera.x,
+            this.y - camera.y,
+            this.width,
+            this.height
+        );
+    }
+
+    clicked() {
+
+        if (this.pickedUp) return;
+
+        const worldMouseX =
+            mouse.x + game.camera.x;
+
+        const worldMouseY =
+            mouse.y + game.camera.y;
+
+        const hovering =
+            worldMouseX > this.x &&
+            worldMouseX < this.x + this.width &&
+            worldMouseY > this.y &&
+            worldMouseY < this.y + this.height;
+
+        if (hovering && mouse.clicked) {
+
+            if (
+                game.inventory.addItem(this.name)
+            ) {
+
+                this.pickedUp = true;
+            }
+        }
+    }
+}
+
+class Chest {
+
+    constructor(x, y, width, height) {
+
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    draw(ctx, camera) {
+
+        ctx.fillStyle = 'red';
+
+        ctx.fillRect(
+            this.x - camera.x,
+            this.y - camera.y,
+            this.width,
+            this.height
+        );
+    }
+
+    collidesWith(target) {
+
+        if (
+            target.x + target.width > this.x &&
+            target.x < this.x + this.width &&
+            target.y + target.height > this.y &&
+            target.y < this.y + this.height
+        ) {
+
+            let overlapLeft =
+                (target.x + target.width) - this.x;
+
+            let overlapRight =
+                (this.x + this.width) - target.x;
+
+            let overlapTop =
+                (target.y + target.height) - this.y;
+
+            let overlapBottom =
+                (this.y + this.height) - target.y;
+
+            let minOverlap = Math.min(
+                overlapLeft,
+                overlapRight,
+                overlapTop,
+                overlapBottom
+            );
+
+            if (minOverlap === overlapLeft) {
+                target.x = this.x - target.width;
+            }
+
+            if (minOverlap === overlapRight) {
+                target.x = this.x + this.width;
+            }
+
+            if (minOverlap === overlapTop) {
+                target.y = this.y - target.height;
+            }
+
+            if (minOverlap === overlapBottom) {
+                target.y = this.y + this.height;
+            }
+        }
+    }
+
+    clicked() {
+
+        const worldMouseX =
+            mouse.x + game.camera.x;
+
+        const worldMouseY =
+            mouse.y + game.camera.y;
+
+        const hovering =
+            worldMouseX > this.x &&
+            worldMouseX < this.x + this.width &&
+            worldMouseY > this.y &&
+            worldMouseY < this.y + this.height;
+
+        if (
+            hovering &&
+            mouse.clicked &&
+            !game.chestOpen
+        ) {
+
+            game.chestOpen = true;
+
+            game.chestInventory.setVisible(true);
+
+            game.chestInventory.render();
+        }
     }
 }
 
 class ExitChest {
+
     constructor(x, y, width, height) {
+
         this.x = x;
         this.y = y;
         this.width = width;
@@ -310,70 +413,204 @@ class ExitChest {
     }
 
     draw() {
-        if (ChestOpen) {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-        }
+
+        if (!game.chestOpen) return;
+
+        ctx.fillStyle = 'red';
+
+        ctx.fillRect(
+            this.x,
+            this.y,
+            this.width,
+            this.height
+        );
     }
 
-    clicked(target) {
-        const worldMouseX = mouse.x;
-        const worldMouseY = mouse.y;
+    clicked() {
 
-        if (
-            worldMouseX > this.x &&
-            worldMouseX < this.x + this.width &&
-            worldMouseY > this.y &&
-            worldMouseY < this.y + this.height &&
-            ChestOpen &&
-            mouse.clicked
-        ) {
-            ChestOpen = false;
-            if (!ChestOpen) {
-                chestInventory.setVisible(false);
-                target.openedOnce = false;
-            }
-            chestInventory.render()
+        if (!game.chestOpen) return;
+
+        const hovering =
+            mouse.x > this.x &&
+            mouse.x < this.x + this.width &&
+            mouse.y > this.y &&
+            mouse.y < this.y + this.height;
+
+        if (hovering && mouse.clicked) {
+
+            game.chestOpen = false;
+
+            game.chestInventory.setVisible(false);
         }
     }
 }
 
-const player = new Player(500, 500, 50, 50);
-let ChestOpen = false;
-const camera = new Camera();
-const block = new Chest(300, 300, 100, 50);
-const world = new World();
-const inventory = new Inventory(5, 20, window.innerHeight - 70, 'inventory', 5);
-inventory.render();
-const cords = new Cords();
-const gold = [];
-const wood = new Item(412.5, 412.5, 25, 25, 'Wood', 'saddleBrown');
-const chestInventory = new Inventory(30, window.innerWidth / 2 - (10 * 54 / 2) - 4, window.innerHeight / 2 - (3 * 52), 'chestInventory', 10);
-const LeaveChest = new ExitChest(window.innerWidth / 2 + (10 * 54 / 2) + 15, window.innerHeight / 2 - 2 * (3 * 52) + 120, 20, 20);
+class Cords {
 
-for (let i = 0; i < 6; i++) {
-    let maxFactor = 6;
-    gold.push(new Item(462.5 + (Math.round((Math.random() * maxFactor)) - maxFactor / 2) * 50, 162.5 + (Math.round((Math.random() * maxFactor)) - maxFactor / 2) * 50, 25, 25, 'Gold', 'yellow'));
+    constructor() {
+
+        this.cordsDiv =
+            document.getElementById('cords');
+    }
+
+    update(camera, target) {
+
+        this.cordsDiv.textContent =
+            `X: ${
+                Math.floor(
+                    ((target.x + target.width / 2) - 500) / 50
+                )
+            }, Y: ${
+                Math.floor(
+                    (-((target.y + target.height / 2) - 500)) / 50
+                ) + 1
+            }`;
+    }
 }
+
+class GameData {
+
+    constructor() {
+
+        this.player =
+            new Player(500, 500, 50, 50);
+
+        this.camera =
+            new Camera();
+
+        this.world =
+            new World();
+
+        this.cords =
+            new Cords();
+
+        this.chestOpen = false;
+
+        this.inventory =
+            new Inventory(
+                5,
+                20,
+                window.innerHeight - 70,
+                'inventory',
+                5
+            );
+
+        this.chestInventory =
+            new Inventory(
+                30,
+                window.innerWidth / 2 - (10 * 54 / 2) - 4,
+                window.innerHeight / 2 - (3 * 52),
+                'chestInventory',
+                10
+            );
+
+        this.chestInventory.setVisible(false);
+
+        this.chest =
+            new Chest(300, 300, 100, 50);
+
+        this.exitChest =
+            new ExitChest(
+                window.innerWidth / 2 + (10 * 54 / 2) + 15,
+                window.innerHeight / 2 - 2 * (3 * 52) + 120,
+                20,
+                20
+            );
+
+        this.wood =
+            new Item(
+                412.5,
+                412.5,
+                25,
+                25,
+                'Wood',
+                'saddlebrown'
+            );
+
+        this.gold = [];
+
+        for (let i = 0; i < 6; i++) {
+
+            let maxFactor = 6;
+
+            this.gold.push(
+
+                new Item(
+
+                    462.5 +
+                    (
+                        Math.round(
+                            Math.random() * maxFactor
+                        ) -
+                        maxFactor / 2
+                    ) * 50,
+
+                    162.5 +
+                    (
+                        Math.round(
+                            Math.random() * maxFactor
+                        ) -
+                        maxFactor / 2
+                    ) * 50,
+
+                    25,
+                    25,
+                    'Gold',
+                    'yellow'
+                )
+            );
+        }
+
+        this.inventory.render();
+    }
+}
+
+const game = new GameData();
 
 function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    player.update();
-    block.collidesWith(player);
-    gold.forEach(item => item.clicked());
-    wood.clicked();
-    block.clicked();
-    camera.follow(player);
-    world.draw(ctx, camera);
-    gold.forEach(item => item.draw(ctx, camera));
-    wood.draw(ctx, camera);
-    player.draw(ctx, camera);
-    block.draw(ctx, camera);
-    cords.update(ctx, camera, player);
-    LeaveChest.clicked(block);
-    block.Open();
-    LeaveChest.draw();
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    game.player.update();
+
+    game.chest.collidesWith(game.player);
+
+    game.gold.forEach(item => item.clicked());
+
+    game.wood.clicked();
+
+    game.chest.clicked();
+
+    game.exitChest.clicked();
+
+    game.camera.follow(game.player);
+
+    game.world.draw(ctx, game.camera);
+
+    game.gold.forEach(item =>
+        item.draw(ctx, game.camera)
+    );
+
+    game.wood.draw(ctx, game.camera);
+
+    game.player.draw(ctx, game.camera);
+
+    game.chest.draw(ctx, game.camera);
+
+    game.exitChest.draw();
+
+    game.cords.update(
+        game.camera,
+        game.player
+    );
+
     mouse.clicked = false;
+
     requestAnimationFrame(gameLoop);
 }
 
