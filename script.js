@@ -1,5 +1,6 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
@@ -14,7 +15,6 @@ const mouse = {
 };
 
 window.addEventListener('mousemove', (e) => {
-
     mouse.x = e.clientX;
     mouse.y = e.clientY;
 
@@ -31,11 +31,13 @@ window.addEventListener('mouseup', () => {
 window.addEventListener('keydown', (e) => {
     keys[e.key] = true;
 });
+
 window.addEventListener('keyup', (e) => {
     keys[e.key] = false;
 });
 
 class Player {
+
     constructor(x, y, width, height) {
         this.x = x;
         this.y = y;
@@ -58,7 +60,7 @@ class Player {
     }
 
     draw(ctx, camera) {
-        ctx.fillStyle = 'blue';
+        ctx.fillStyle = '#00008B';
         ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
     }
 }
@@ -104,18 +106,20 @@ class Block {
 }
 
 class Item {
-    constructor(x, y, width, height, name) {
+
+    constructor(x, y, width, height, name, color) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.name = name;
         this.pickedUp = false;
+        this.color = color;
     }
 
     draw(ctx, camera) {
         if (!this.pickedUp) {
-            ctx.fillStyle = 'yellow';
+            ctx.fillStyle = this.color;
 
             ctx.fillRect(
                 this.x - camera.x,
@@ -148,7 +152,9 @@ class Item {
 }
 
 class Camera {
+
     constructor() {
+
         this.x = 0;
         this.y = 0;
     }
@@ -160,6 +166,7 @@ class Camera {
 }
 
 class World {
+
     constructor() {
         this.tileSize = 50;
     }
@@ -181,6 +188,7 @@ class World {
 }
 
 class Cords {
+
     constructor() {
         this.cordsDiv = document.getElementById('cords');
         this.x = window.innerWidth - 150;
@@ -190,25 +198,20 @@ class Cords {
     update(ctx, camera, target) {
         this.x = camera.x + canvas.width / 2 - 150;
         this.y = camera.y + 20;
-        this.cordsDiv.textContent = `X: ${Math.floor(Math.floor(((target.x + target.width) - canvas.width / 2) / 50))},
-        Y: ${Math.floor(Math.floor((-((target.y + target.height) - canvas.height / 2)) / 50))}`;
+        this.cordsDiv.textContent = `X: ${Math.floor(Math.floor(((target.x + target.width / 2) - 500) / 50))},
+        Y: ${Math.floor(Math.floor((-((target.y + target.height / 2) - 500)) / 50)) + 1}`;
     }
 }
 
 class Inventory {
 
     constructor(size) {
-
         this.size = size;
-
         this.slots = new Array(size).fill(null);
-
         this.inventoryDiv = document.getElementById('inventory');
     }
 
     addItem(itemName) {
-
-        // First try stacking onto existing items
 
         for (let i = 0; i < this.slots.length; i++) {
 
@@ -228,10 +231,7 @@ class Inventory {
             }
         }
 
-        // Then try empty slot
-
         for (let i = 0; i < this.slots.length; i++) {
-
             if (this.slots[i] === null) {
 
                 this.slots[i] = {
@@ -244,34 +244,27 @@ class Inventory {
                 return true;
             }
         }
-
-        // Inventory full
-
         return false;
     }
 
     render() {
-
         this.inventoryDiv.innerHTML = '';
 
         for (let item of this.slots) {
 
             const slotDiv = document.createElement('div');
-
             slotDiv.classList.add('slot');
 
             if (item) {
-
                 slotDiv.textContent =
                     `${item.amount} ${item.name}`;
             }
-
             this.inventoryDiv.appendChild(slotDiv);
         }
     }
 }
 
-const player = new Player(canvas.width / 2, canvas.height / 2, 50, 50);
+const player = new Player(500, 500, 50, 50);
 const camera = new Camera();
 const block = new Block(300, 300, 100, 100);
 const world = new World();
@@ -279,10 +272,11 @@ const inventory = new Inventory(5);
 inventory.render();
 const cords = new Cords();
 const gold = [];
+const wood = new Item(412.5, 412.5, 25, 25, 'Wood', 'saddleBrown');
 
 for (let i = 0; i < 6; i++) {
     let maxFactor = 6;
-    gold.push(new Item(462.5 + (Math.round((Math.random() * maxFactor)) - maxFactor / 2) * 50, 162.5 + (Math.round((Math.random() * maxFactor)) - maxFactor / 2) * 50, 25, 25, 'Gold'));
+    gold.push(new Item(462.5 + (Math.round((Math.random() * maxFactor)) - maxFactor / 2) * 50, 162.5 + (Math.round((Math.random() * maxFactor)) - maxFactor / 2) * 50, 25, 25, 'Gold', 'yellow'));
 }
 
 function gameLoop() {
@@ -290,9 +284,11 @@ function gameLoop() {
     player.update();
     block.collidesWith(player);
     gold.forEach(item => item.clicked());
+    wood.clicked();
     camera.follow(player);
     world.draw(ctx, camera);
     gold.forEach(item => item.draw(ctx, camera));
+    wood.draw(ctx, camera);
     player.draw(ctx, camera);
     block.draw(ctx, camera);
     cords.update(ctx, camera, player);
